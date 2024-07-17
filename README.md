@@ -1,4 +1,7 @@
 
+# Solution Write-up
+Please read ``solution.md``
+
 # How to reproduce
 
 ## Hardware
