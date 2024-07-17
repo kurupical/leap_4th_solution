@@ -1,0 +1,5 @@
+venv
+input/leap-atmospheric-physics-ai-climsim
+*.pyc
+.vscode
+tmp
