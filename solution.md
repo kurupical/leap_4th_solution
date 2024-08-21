@@ -2,15 +2,15 @@
 
 ## 1-1. Summary
 
-| # | model_name | cv | lb | training time | note |
-| ---- | ---- | ---- | ---- | ---- | ---- |
-| 1 | convnext 64x3-128x3-256x27-512x3 | 0.7881 | 0.78577 | 60h with 1xRTX4090 | |
-| 2 | convnext 96x3-192x3-384x27-768x3 | 0.7887 | 0.78697 | 120h with 1xRTX4090 | |
-| 3 | convnext 128x3-256x3-512x27-1024x3 | 0.78693 | ? | 132h with 1xRTX4090 | use 81.25% data |
-| 4 | convnext 144x3-288x3-576x27-1152x3 | 0.78547 | ? | 28h with 8xRTX4090 |  |
-| 5 | transformer 512x4 | 0.7848 | 0.78341 | 54h with 1xRTX4090 |  |
-| 6 | transformer 768x4 | 0.7843 | ? | 72h with 1xRTX4090 |  |
-| 7 | convnext 144x3-288x3-576x27-1152x3 | 0.78769 | ? | 16h with 8xRTX4090 | training 4epochs |
+| # | model_name | cv | public | private | training time | note |
+| ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+| 1 | convnext 64x3-128x3-256x27-512x3 | 0.7881 | 0.78577 | 0.78147 |60h with 1xRTX4090 | |
+| 2 | convnext 96x3-192x3-384x27-768x3 | 0.7887 | 0.78697 | 0.78281 | 120h with 1xRTX4090 | |
+| 3 | convnext 128x3-256x3-512x27-1024x3 | 0.78693 | 0.78480 | 0.78150 | 132h with 1xRTX4090 | use 81.25% data |
+| 4 | convnext 144x3-288x3-576x27-1152x3 | 0.78547 | 0.78317 | 0.77903 | 28h with 8xRTX4090 |  |
+| 5 | transformer 512x4 | 0.7848 | 0.78341 | 0.77910 | 54h with 1xRTX4090 |  |
+| 6 | transformer 768x4 | 0.7843 | 0.78350 | 0.77966 | 72h with 1xRTX4090 |  |
+| 7 | convnext 144x3-288x3-576x27-1152x3 | 0.78769 | 0.78622 | 0.78137 | 16h with 8xRTX4090 | training 4epochs |
 
 ## 1-2. Feature Engineering / Preprocessing
 I use all row-les datasets.
@@ -222,9 +222,9 @@ This was the competition where we needed to rely on neural networks the most amo
 
 # 4. Ensemble/Stacking
 ## 4-1. Summary
-合計 30 モデルをアンサンブルした。
+Ensemble 30 models.
 
-| # | method | cv | lb |
+| # | method | public | private |
 | --- | --- | --- | --- |
 | 1 | nelder-mead | 0.79100 | 0.78713 |
 | 2 | 1d-cnn stacking | 0.79193 | 0.78774 |

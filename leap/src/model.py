@@ -1142,12 +1142,12 @@ def finished_feature_engineering(train_files):
     return True
 
 
-def main(config: Config):
+def main(config: Config, inference_mode: bool = False, output_dir: str = None):
     try:
-
         seed_everything()
-        output_dir = f"output/{os.path.basename(__file__).replace('.py', '')}/{dt.now().strftime('%Y%m%d%H%M%S')}_{config.exp_name}"
-        os.makedirs(output_dir, exist_ok=True)
+        if output_dir is None:
+            output_dir = f"output/{os.path.basename(__file__).replace('.py', '')}/{dt.now().strftime('%Y%m%d%H%M%S')}_{config.exp_name}"
+            os.makedirs(output_dir, exist_ok=True)
         logger = get_logger(output_dir)
         logger.info("start!")
         logger.info(f"config: {config}")
@@ -1155,8 +1155,9 @@ def main(config: Config):
         shutil.copy(__file__, output_dir)
         device = DEVICE if torch.cuda.is_available() else "cpu"
 
-        with open(f"{output_dir}/cfg.pickle", "wb") as f:
-            pickle.dump(config, f)
+        if not inference_mode:
+            with open(f"{output_dir}/cfg.pickle", "wb") as f:
+                pickle.dump(config, f)
 
         if finished_feature_engineering(config.train_files) and not config.debug:
             logger.info("already finished feature engineering.")
@@ -1248,7 +1249,7 @@ def main(config: Config):
         )
         test_loader = DataLoader(
             test_dataset,
-            batch_size=config.batch_size,
+            batch_size=1,
             shuffle=False,
             num_workers=config.num_workers,
             pin_memory=True,
@@ -1308,6 +1309,9 @@ def main(config: Config):
 
         logger.info(f"training start: ema_decays = {config.ema_decays}")
         for epoch in range(config.epochs):
+            if inference_mode:
+                logger.info("break; inference mode = True")
+                break
             logger.info(f"epoch: {epoch}")
             train_loss = train_fn(
                 train_loader,
@@ -1383,23 +1387,24 @@ def main(config: Config):
             torch.cuda.empty_cache()
 
         model.load_state_dict(torch.load(f"{output_dir}/best.pth"))
-        val_loss, preds, labels = eval_fn(val_loader, model, device, criterion)
+        if not inference_mode:
+            val_loss, preds, labels = eval_fn(val_loader, model, device, criterion)
 
-        df_pred = label_pipe.inverse_transform(
-            pl.DataFrame(preds, schema=TARGET_COLUMNS)
-        )
-        df_valid = pl.read_parquet(
-            "input/leap-atmospheric-physics-ai-climsim/valid.parquet"
-        ).head(len(df_pred))
-        for col in ALL_ZERO_TARGET_COLS:
-            df_valid = df_valid.with_columns(df_valid[col].clip(0, 0))
-        df_pred = df_pred.with_columns(df_valid["sample_id"])
-        labels = label_pipe.inverse_transform(
-            pl.DataFrame(labels, schema=TARGET_COLUMNS)
-        ).to_numpy()
-        r2 = r2_score(labels, df_pred[TARGET_COLUMNS].to_numpy())
-        logger.info(f"r2_val: {r2}")
-        df_pred.write_parquet(f"{output_dir}/pred_valid.parquet")
+            df_pred = label_pipe.inverse_transform(
+                pl.DataFrame(preds, schema=TARGET_COLUMNS)
+            )
+            df_valid = pl.read_parquet(
+                "input/leap-atmospheric-physics-ai-climsim/valid.parquet"
+            ).head(len(df_pred))
+            for col in ALL_ZERO_TARGET_COLS:
+                df_valid = df_valid.with_columns(df_valid[col].clip(0, 0))
+            df_pred = df_pred.with_columns(df_valid["sample_id"])
+            labels = label_pipe.inverse_transform(
+                pl.DataFrame(labels, schema=TARGET_COLUMNS)
+            ).to_numpy()
+            r2 = r2_score(labels, df_pred[TARGET_COLUMNS].to_numpy())
+            logger.info(f"r2_val: {r2}")
+            df_pred.write_parquet(f"{output_dir}/pred_valid.parquet")
 
         test_loss, preds, labels = eval_fn(
             test_loader, model, device, criterion, is_test=True
